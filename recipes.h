@@ -20,3 +20,14 @@
 #include <stdarg.h>
 #include <sys/wait.h>
 #include <syslog.h>
+
+typedef struct{
+    int fin;
+    int fout;
+    int port;
+    int threadNum;
+    int maxThreadNum;
+}mainArgs;
+
+int daemonBorn();
+int readArguments(int argc, char *argv[], mainArgs *margs);

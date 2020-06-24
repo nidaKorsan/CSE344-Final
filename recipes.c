@@ -44,3 +44,82 @@ int daemonBorn(){
         return -1;
     return 0;
 }
+
+int readArguments(int argc, char *argv[], mainArgs *margs){
+    int opt;
+    char *inputFilePath = NULL;
+    char *outputFilePath = NULL;
+    int flag_i = 0, flag_o = 0, flag_p = 0, flag_s = 0, flag_x = 0;
+    //./server -i pathToFile -p PORT -o pathToLogFile -s 4 -x 24
+    if(argc != 11) {
+        printf("Wrong argument count. There should be exactly 11.\n     \
+        Usage case : ./server -i pathToFile -p PORT -o pathToLogFile -s 4 -x 24\n");
+        return -1;
+    }
+    while((opt = getopt(argc, argv, "i:p:o:s:x:")) != -1)
+    {
+        switch(opt)
+        {
+            case 'i':
+                if (flag_i){
+                    printf("-i option is already given.\nUsage case : ./server -i pathToFile -p PORT -o pathToLogFile -s 4 -x 24\n");
+                    return -1;
+                } /*If -i parameter is already given give error*/
+                inputFilePath = optarg;
+                flag_i = 1;
+                break;
+            case 'p':
+                if(flag_p){
+                    printf("-p option is already given.\nUsage case : ./server -i pathToFile -p PORT -o pathToLogFile -s 4 -x 24\n");
+                    return -1;
+                } /*If -p parameter is already given give error*/
+                margs->port = atoi(optarg);
+                flag_p = 1;
+                break;
+            case 'o':
+                if(flag_o){
+                    printf("-o option is already given.\nUsage case : ./server -i pathToFile -p PORT -o pathToLogFile -s 4 -x 24\n");
+                    return -1;
+                } /*If -o parameter is already given give error*/
+                outputFilePath = optarg;
+                flag_o = 1;
+                break;
+            case 's':
+                if(flag_s){
+                    printf("-s option is already given.\nUsage case : ./server -i pathToFile -p PORT -o pathToLogFile -s 4 -x 24\n");
+                    return -1;
+                } /*If -s parameter is already given give error*/
+                if((margs->threadNum = atoi(optarg)) < 2){
+                    printf("-s argument cannot be less than 2.\n");
+                    return -1;
+                }
+                flag_s = 1;
+                break;
+            case 'x':
+                if(flag_x){
+                    printf("-x option is already given.\nUsage case : ./server -i pathToFile -p PORT -o pathToLogFile -s 4 -x 24\n");
+                    return -1;
+                } /*If -x parameter is already given give error*/
+                margs->maxThreadNum = atoi(optarg);
+                flag_x = 1;
+                break;                                
+            case '?':
+                printf("Unknown option\nUsage case : ./server -i pathToFile -p PORT -o pathToLogFile -s 4 -x 24\n");
+                return -1;
+        default:
+            break;
+        }
+    }
+
+    if ((margs->fin = open(inputFilePath, O_RDWR, 0666)) == -1){
+        printf("Error while opening the input file: %s\n", inputFilePath);
+        return -1;
+    }
+
+    if ((margs->fout = open(outputFilePath,O_RDWR | O_CREAT, 0666)) == -1){
+        close(margs->fin);
+        printf("Error while opening the output file: %s\n", outputFilePath);
+        return -1;
+    }
+    return 0;
+}
