@@ -52,8 +52,7 @@ int readArguments(int argc, char *argv[], mainArgs *margs){
     int flag_i = 0, flag_o = 0, flag_p = 0, flag_s = 0, flag_x = 0;
     //./server -i pathToFile -p PORT -o pathToLogFile -s 4 -x 24
     if(argc != 11) {
-        printf("Wrong argument count. There should be exactly 11.\n     \
-        Usage case : ./server -i pathToFile -p PORT -o pathToLogFile -s 4 -x 24\n");
+        printf("Wrong argument count. There should be exactly 11.\nUsage case : ./server -i pathToFile -p PORT -o pathToLogFile -s 4 -x 24\n");
         return -1;
     }
     while((opt = getopt(argc, argv, "i:p:o:s:x:")) != -1)
