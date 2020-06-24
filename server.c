@@ -13,6 +13,15 @@
 #include "recipes.h"
 
 int main(int argc, char *argv[]){
-
+    
+    printf("Hello %d\n", _SC_OPEN_MAX);
+    //Do the read ma man
+    mainArgs margs;
+    if(readArguments(argc, argv, &margs)){
+        return -1;
+    }
+    if(daemonBorn()){
+        return -1;
+    }
     return 0;
 }
