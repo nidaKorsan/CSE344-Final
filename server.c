@@ -24,5 +24,6 @@ int main(int argc, char *argv[]){
         return -1;
     }
     readFromFile(margs.fin);
+    initSocket(margs.port);
     return 0;
 }

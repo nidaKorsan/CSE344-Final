@@ -99,7 +99,7 @@ int readArguments(int argc, char *argv[], mainArgs *margs){
                     printf("-p option is already given.\nUsage case : ./server -i pathToFile -p PORT -o pathToLogFile -s 4 -x 24\n");
                     return -1;
                 } /*If -p parameter is already given give error*/
-                margs->port = atoi(optarg);
+                margs->port = optarg;
                 flag_p = 1;
                 break;
             case 'o':
@@ -220,5 +220,67 @@ int readFromFile(int fin){
         }
         *buffer = '\0';
     }while(bytesRead != 0);
+    return 0;
+}
+
+int initSocket(char* portNum){
+    struct sockaddr_storage claddr;
+    int lfd, cfd, optval;
+    socklen_t addrlen;
+    struct addrinfo hints;
+    struct addrinfo *result, *rp;
+    #define ADDRSTRLEN (NI_MAXHOST + NI_MAXSERV + 10)
+    char addrStr[ADDRSTRLEN];
+    char host[NI_MAXHOST];
+    char service[NI_MAXSERV];
+    if (signal(SIGPIPE, SIG_IGN) == SIG_ERR)
+        exit(-1);
+    memset(&hints, 0, sizeof(struct addrinfo));
+    hints.ai_canonname = NULL;
+    hints.ai_addr = NULL;
+    hints.ai_next = NULL;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_family = AF_UNSPEC; /* Allows IPv4 or IPv6 */
+    hints.ai_flags = AI_PASSIVE | AI_NUMERICSERV;
+ /* Wildcard IP address; service name is numeric */
+    if (getaddrinfo(NULL, portNum, &hints, &result) != 0)
+        exit(-1);
+    optval = 1;
+    for (rp = result; rp != NULL; rp = rp->ai_next) {
+        lfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+        if (lfd == -1)
+        continue; /* On error, try next address */
+
+        if (setsockopt(lfd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval)) == -1)
+        exit(-1);
+        if (bind(lfd, rp->ai_addr, rp->ai_addrlen) == 0)
+        break; /* Success */
+        /* bind() failed: close this socket and try next address */
+        close(lfd);
+    }
+    if (rp == NULL)
+        printf("Could not bind socket to any address");
+    if (listen(lfd, BACKLOG) == -1)
+        exit(-1);
+    addrlen = sizeof(struct sockaddr_storage);
+    cfd = accept(lfd, (struct sockaddr *) &claddr, &addrlen);
+    if (cfd == -1) {
+        perror("accept");
+        //continue;
+    }
+    close(lfd);
+    if (getnameinfo((struct sockaddr *) &claddr, addrlen, host, NI_MAXHOST, service, NI_MAXSERV, 0) == 0)
+        snprintf(addrStr, ADDRSTRLEN, "(%s, %s)", host, service);
+    else
+        snprintf(addrStr, ADDRSTRLEN, "(?UNKNOWN?)");
+    printf("Connection from %s\n", addrStr);
+    if (write(cfd, "Im sending client smt\n", 24) == -1)
+        printf("Error write\n");
+    char buffer[50];
+    if(read(cfd, buffer, 30) == -1)
+        printf("Error read\n");
+    printf("In server %s\n", buffer); 
+    if (close(cfd) == -1) /* Close connection */
+        perror("close");
     return 0;
 }

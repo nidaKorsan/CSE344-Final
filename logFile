@@ -1,40 +1,7 @@
  Directed graph (each unordered pair of nodes is saved once): p2p-Gnutella08.txt 
-Num is -1
  Directed Gnutella P2P network from August 8 2002
-Num is -1
  Nodes: 6301 Edges: 20777
-Num is -1
  FromNodeId	ToNodeId
-Num is -1
-Num is 0
-Num is 1
-Num is 0
-Num is 2
-Num is 0
-Num is 3
-Num is 0
-Num is 4
-Num is 0
-Num is 5
-Num is 0
-Num is 6
-Num is 0
-Num is 7
-Num is 0
-Num is 8
-Num is 0
-Num is 9
-Num is 0
-Num is 10
-Num is 3
-Num is 703
-Num is 3
-Num is 826
-Num is 3
-Num is 1097
-Num is 3
-Num is 1287
-Num is 3
-Num is 1591
-Num is 3
-Num is 1895
+Connection from (localhost, 63347)
+In server im the client
+

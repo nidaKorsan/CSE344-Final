@@ -21,20 +21,24 @@
 #include <sys/wait.h>
 #include <syslog.h>
 #include <ctype.h>
-
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
 #define UNLOCK(f) { lock.l_type = F_UNLCK;\
             if (fcntl(f, F_SETLKW, &lock) == -1){\
                 printf("Cannot unlock the file.\n");} }
 #define LOCK(f) { lock.l_type = F_WRLCK;\
             if (fcntl(f, F_SETLKW, &lock) == -1){\
                 printf("Cannot lock the file.\n");} }
+#define BACKLOG 50
+#define PORT "44444"
 
 typedef struct{
     int fin;
     int fout;
     char *inputPath;
     char *outputPath;
-    int port;
+    char* port;
     int threadNum;
     int maxThreadNum;
 }mainArgs;
@@ -65,3 +69,4 @@ graph_t* createAGraph(int vertices);
 void addEdge(graph_t* graph, edge_t newEdge);
 void destroyGraph(graph_t *g);
 int readFromFile(int fin);
+int initSocket(char* portNum);
