@@ -36,11 +36,20 @@ typedef struct{
     int src;//source node
 }edge_t;//src->dest
 
+typedef struct node{
+    int vertex;
+    struct node *next;
+}node_t;
+
 typedef struct{
     int numVertice;//number of vertices
     int numEdge;//number of edges
-    
+    node_t **adjLists;//unknown number of vertices, adjaceny lists list
 }graph_t;
 
 int daemonBorn();
 int readArguments(int argc, char *argv[], mainArgs *margs);
+node_t* createNode(int v);
+graph_t* createAGraph(int vertices);
+void addEdge(graph_t* graph, edge_t newEdge);
+void destroyGraph(graph_t *g);
