@@ -47,6 +47,9 @@ typedef struct{
     node_t **adjLists;//unknown number of vertices, adjaceny lists list
 }graph_t;
 
+int callSigAction();
+void handler(int signalNumber);
+void exitGracefully();
 int daemonBorn();
 int readArguments(int argc, char *argv[], mainArgs *margs);
 node_t* createNode(int v);

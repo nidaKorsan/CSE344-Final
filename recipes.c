@@ -5,6 +5,28 @@
 ; *********************************************/
 #include"recipes.h"
 
+int callSigAction(){
+    struct sigaction sa;
+    sa.sa_flags = SA_RESTART;
+    sa.sa_handler = handler;
+    if((sigfillset(&sa.sa_mask) == -1) || (sigaction(SIGINT, &sa, NULL) == -1))
+        return -1;
+    return 0;
+}
+
+void handler(int signalNumber){
+    switch(signalNumber){
+        case SIGINT:
+           //Do the exit
+            printf("Exiting gracefully\n");
+            exitGracefully();
+            exit(EXIT_SUCCESS);
+    }
+}
+
+void exitGracefully(){
+
+}
 
 int daemonBorn(mainArgs *margs){
     pid_t sid;
@@ -149,4 +171,9 @@ void destroyGraph(graph_t *g){
     int i;
     for(i = 0; i < g->numVertice; i++) free(g->adjLists[i]);
     free(g);
+}
+
+//Reads from input file
+int readFromFile(int fin){
+
 }
