@@ -23,5 +23,6 @@ int main(int argc, char *argv[]){
     if(daemonBorn(&margs)){
         return -1;
     }
+    readFromFile(margs.fin);
     return 0;
 }

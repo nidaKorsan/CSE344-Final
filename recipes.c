@@ -175,5 +175,50 @@ void destroyGraph(graph_t *g){
 
 //Reads from input file
 int readFromFile(int fin){
-
+    struct flock lock;
+    memset(&lock, 0, sizeof(lock));
+    int bytesRead = 0, num = -1;
+    char buffer[2] = "", numBuf[15] = "";
+    LOCK(fin);
+    if(lseek(fin, 0, SEEK_END) == lseek(fin, 0, SEEK_SET)){
+        printf("Error, empty input file\n");
+        return -1;
+    }   
+    do{
+        while(((bytesRead = read(fin, buffer, 1)) == -1) && (errno == EINTR));
+        if(bytesRead < 0){
+            printf("Error while reading input file: %s", strerror(errno));
+            UNLOCK(fin);
+            return -1;
+        }
+        if(*buffer == '#'){//if the read byte is #, means comment, go to the next line
+            while(*buffer != 10 && bytesRead != 0){
+                *buffer = '\0';
+                while(((bytesRead = read(fin, buffer, 1)) == -1) && (errno == EINTR));
+                if(bytesRead < 0){
+                    printf("Error while reading input file: %s", strerror(errno));
+                    UNLOCK(fin);
+                    return -1;
+                }
+                printf("%s", buffer);
+            }
+        }
+        else if(isdigit(*buffer) != 0){//if read byte is a numeric character
+            strcpy(numBuf, buffer);
+            while(*buffer != 9 && *buffer != 10 && bytesRead != 0){//while read byte is not tab or newline
+                *buffer = '\0';
+                while(((bytesRead = read(fin, buffer, 1)) == -1) && (errno == EINTR));
+                if(bytesRead < 0){
+                    printf("Error while reading input file: %s", strerror(errno));
+                    UNLOCK(fin);
+                    return -1;
+                }                    
+                if(*buffer != 9 && *buffer != 10)
+                    strcat(numBuf, buffer);
+            }
+            num = atoi(numBuf);
+        }
+        *buffer = '\0';
+    }while(bytesRead != 0);
+    return 0;
 }
