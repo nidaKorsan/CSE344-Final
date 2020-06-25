@@ -5,7 +5,8 @@
 ; *********************************************/
 #include"recipes.h"
 
-int daemonBorn(){
+
+int daemonBorn(mainArgs *margs){
     pid_t sid;
     switch (fork()) { //Become background process 
         case -1:
@@ -33,7 +34,16 @@ int daemonBorn(){
     int i;
     //Close all of the open file descriptors (all possible ones)
     for (i = sysconf(_SC_OPEN_MAX); i >= 0; close (i--));
-    int fd;
+    if((margs->fin = open(margs->inputPath, O_RDWR)) == -1){
+        printf("Error while opening file %s\n", strerror(errno));
+        return -1;
+    }
+    if((margs->fout = open(margs->outputPath, O_RDWR)) == -1){
+        printf("Error while opening file %s\n", strerror(errno));
+        close(margs->fin);
+        return -1;
+    }  
+    /*int fd;
     close(STDIN_FILENO); //Reopen standard fd's to /dev/null
     fd = open("/dev/null", O_RDWR);
     if (fd != STDIN_FILENO) // 'fd' should be 0 
@@ -41,14 +51,12 @@ int daemonBorn(){
     if (dup2(STDIN_FILENO, STDOUT_FILENO) != STDOUT_FILENO)
         return -1;
     if (dup2(STDIN_FILENO, STDERR_FILENO) != STDERR_FILENO)
-        return -1;
+        return -1;*/
     return 0;
 }
 
 int readArguments(int argc, char *argv[], mainArgs *margs){
     int opt;
-    char *inputFilePath = NULL;
-    char *outputFilePath = NULL;
     int flag_i = 0, flag_o = 0, flag_p = 0, flag_s = 0, flag_x = 0;
     //./server -i pathToFile -p PORT -o pathToLogFile -s 4 -x 24
     if(argc != 11) {
@@ -64,7 +72,7 @@ int readArguments(int argc, char *argv[], mainArgs *margs){
                     printf("-i option is already given.\nUsage case : ./server -i pathToFile -p PORT -o pathToLogFile -s 4 -x 24\n");
                     return -1;
                 } /*If -i parameter is already given give error*/
-                inputFilePath = optarg;
+                margs->inputPath = optarg;
                 flag_i = 1;
                 break;
             case 'p':
@@ -80,7 +88,7 @@ int readArguments(int argc, char *argv[], mainArgs *margs){
                     printf("-o option is already given.\nUsage case : ./server -i pathToFile -p PORT -o pathToLogFile -s 4 -x 24\n");
                     return -1;
                 } /*If -o parameter is already given give error*/
-                outputFilePath = optarg;
+                margs->outputPath = optarg;
                 flag_o = 1;
                 break;
             case 's':
@@ -110,7 +118,7 @@ int readArguments(int argc, char *argv[], mainArgs *margs){
         }
     }
 
-    if ((margs->fin = open(inputFilePath, O_RDWR, 0666)) == -1){
+    /*if ((margs->fin = open(inputFilePath, O_RDWR, 0666)) == -1){
         printf("Error while opening the input file: %s\n", inputFilePath);
         return -1;
     }
@@ -119,6 +127,6 @@ int readArguments(int argc, char *argv[], mainArgs *margs){
         close(margs->fin);
         printf("Error while opening the output file: %s\n", outputFilePath);
         return -1;
-    }
+    }*/
     return 0;
 }

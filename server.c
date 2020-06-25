@@ -20,7 +20,7 @@ int main(int argc, char *argv[]){
     if(readArguments(argc, argv, &margs)){
         return -1;
     }
-    if(daemonBorn()){
+    if(daemonBorn(&margs)){
         return -1;
     }
     return 0;

@@ -24,10 +24,23 @@
 typedef struct{
     int fin;
     int fout;
+    char *inputPath;
+    char *outputPath;
     int port;
     int threadNum;
     int maxThreadNum;
 }mainArgs;
+
+typedef struct{
+    int dest;//destination node
+    int src;//source node
+}edge_t;//src->dest
+
+typedef struct{
+    int numVertice;//number of vertices
+    int numEdge;//number of edges
+    
+}graph_t;
 
 int daemonBorn();
 int readArguments(int argc, char *argv[], mainArgs *margs);
