@@ -27,31 +27,27 @@ int daemonBorn(mainArgs *margs){
         default: _exit(EXIT_SUCCESS);
     }
     umask(0);//Clear file mode creation mask
-    if ((chdir("/")) < 0) {// Change to root directory
+    //TODO may uncomment this later
+    /*if ((chdir("/")) < 0) {// Change to root directory
         printf("Error during chdir %s\n",strerror(errno));
         return -1;
-    }
+    }*/
     int i;
     //Close all of the open file descriptors (all possible ones)
     for (i = sysconf(_SC_OPEN_MAX); i >= 0; close (i--));
+    //open input file and output log file
     if((margs->fin = open(margs->inputPath, O_RDWR)) == -1){
         printf("Error while opening file %s\n", strerror(errno));
         return -1;
     }
-    if((margs->fout = open(margs->outputPath, O_RDWR)) == -1){
+    if((margs->fout = open(margs->outputPath, O_RDWR | O_CREAT)) == -1){
         printf("Error while opening file %s\n", strerror(errno));
         close(margs->fin);
         return -1;
-    }  
-    /*int fd;
-    close(STDIN_FILENO); //Reopen standard fd's to /dev/null
-    fd = open("/dev/null", O_RDWR);
-    if (fd != STDIN_FILENO) // 'fd' should be 0 
-        return -1;
-    if (dup2(STDIN_FILENO, STDOUT_FILENO) != STDOUT_FILENO)
-        return -1;
-    if (dup2(STDIN_FILENO, STDERR_FILENO) != STDERR_FILENO)
-        return -1;*/
+    }
+    /*char lokum[25]; strcpy(lokum,"lokumgib"); 
+    write(margs->fout, lokum, strlen(lokum));*/
+    //sleep(6);
     return 0;
 }
 
@@ -117,16 +113,5 @@ int readArguments(int argc, char *argv[], mainArgs *margs){
             break;
         }
     }
-
-    /*if ((margs->fin = open(inputFilePath, O_RDWR, 0666)) == -1){
-        printf("Error while opening the input file: %s\n", inputFilePath);
-        return -1;
-    }
-
-    if ((margs->fout = open(outputFilePath,O_RDWR | O_CREAT, 0666)) == -1){
-        close(margs->fin);
-        printf("Error while opening the output file: %s\n", outputFilePath);
-        return -1;
-    }*/
     return 0;
 }
