@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
-
+#include <string.h>
+#define INTMAX 2147483647
 typedef struct{
     int dest;//destination node
     int src;//source node
@@ -38,5 +39,6 @@ void enqueue(queue_t *queue, int element);
 void dequeue(queue_t *queue, int *retElem);
 void displayQueue(queue_t *queue);
 void freeQueue(queue_t *queue);
-
+int isQueueEmpty(queue_t *queue);
+char * bfsSearch(graph_t *graph, int source, int destination);
 

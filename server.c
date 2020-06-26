@@ -28,7 +28,10 @@ int main(int argc, char *argv[]){
     graph_t *graph = createGraph(++temp);
     readFromFile(margs.fin, 1, graph, &temp, &totalTime);
     printServerInfo(margs, *graph, totalTime);
-    printGraph(graph);
+    //printGraph(graph);
+    char *retBfs = bfsSearch(graph, 0, 158);
+    printf("Path is %s\n",retBfs);
+    free(retBfs);
     initSocket(margs.port);
     destroyGraph(graph);
     return 0;

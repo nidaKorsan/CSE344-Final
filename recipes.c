@@ -194,7 +194,9 @@ int readFromFile(int fin, int choice, graph_t *graph, int *maxNum, double *tot){
                 maxNodeNum = num;
             }
         }
-        if(choice && !flag && tempEdge.dest != -1 && tempEdge.src != -1){
+        if(choice && !flag && tempEdge.dest != -1 && tempEdge.src != -1 && bytesRead != 0){
+            printf("%d	%d\n",tempEdge.src,tempEdge.dest);
+            fflush(stdout);
             addEdge(graph, tempEdge);
         }
         *buffer = '\0';
