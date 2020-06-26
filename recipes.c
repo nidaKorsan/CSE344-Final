@@ -74,7 +74,7 @@ int daemonBorn(mainArgs *margs){
 }
 
 //for reading command line arguments
-int readArguments(int argc, char *argv[], mainArgs *margs){
+int readArgumentsServer(int argc, char *argv[], mainArgs *margs){
     int opt;
     int flag_i = 0, flag_o = 0, flag_p = 0, flag_s = 0, flag_x = 0;
     //./server -i pathToFile -p PORT -o pathToLogFile -s 4 -x 24
@@ -139,46 +139,14 @@ int readArguments(int argc, char *argv[], mainArgs *margs){
     return 0;
 }
 
-//new node with vertex v
-node_t* createNode(int v){
-  node_t* newNode = malloc(sizeof(node_t));
-  newNode->vertex = v;
-  newNode->next = NULL;
-  return newNode;
-}
-
-//Create a graph
-graph_t* createAGraph(int verticeNum) {
-  graph_t* graph = malloc(sizeof(graph_t));
-  graph->numVertice = verticeNum;
-  graph->adjLists = malloc(verticeNum * sizeof(node_t*));//allocate memory for verticeNum vertices
-  int i;
-  for (i = 0; i < verticeNum; i++)
-    graph->adjLists[i] = NULL;//initially there are no edges
-  return graph;
-}
-
-// Add edge from src to dest
-void addEdge(graph_t* graph, edge_t newEdge) {
-  node_t* newNode = createNode(newEdge.dest);
-  newNode->next = graph->adjLists[newEdge.src];
-  graph->adjLists[newEdge.src] = newNode;
-  ++graph->numEdge;
-}
-
-//Free all memory used by graph
-void destroyGraph(graph_t *g){
-    int i;
-    for(i = 0; i < g->numVertice; i++) free(g->adjLists[i]);
-    free(g);
-}
 
 //Reads from input file
-int readFromFile(int fin){
+int readFromFile(int fin, int choice, graph_t *graph, int *maxNum){
     struct flock lock;
     memset(&lock, 0, sizeof(lock));
-    int bytesRead = 0, num = -1;
+    int bytesRead = 0, num = -1, maxNodeNum = -1, flag = 0;//flag 0 means source
     char buffer[2] = "", numBuf[15] = "";
+    edge_t tempEdge; tempEdge.dest = -1; tempEdge.src = -1;
     LOCK(fin);
     if(lseek(fin, 0, SEEK_END) == lseek(fin, 0, SEEK_SET)){
         printf("Error, empty input file\n");
@@ -213,13 +181,25 @@ int readFromFile(int fin){
                     UNLOCK(fin);
                     return -1;
                 }                    
-                if(*buffer != 9 && *buffer != 10)
+                if(*buffer != 9 && *buffer != 10 && bytesRead != 0){
                     strcat(numBuf, buffer);
+                    printf("buffer issss %s\n",buffer);
+                }
             }
             num = atoi(numBuf);
+            *numBuf = '\0';
+            if(!flag){tempEdge.src = num; flag = 1;}
+            else {tempEdge.dest = num; flag = 0;}
+            if(num > maxNodeNum && !choice) {
+                maxNodeNum = num;
+            }
+        }
+        if(choice && !flag && tempEdge.dest != -1 && tempEdge.src != -1){
+            addEdge(graph, tempEdge);
         }
         *buffer = '\0';
     }while(bytesRead != 0);
+    *maxNum = maxNodeNum;
     return 0;
 }
 

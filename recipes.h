@@ -24,6 +24,8 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include "myGraph.h"
+
 #define UNLOCK(f) { lock.l_type = F_UNLCK;\
             if (fcntl(f, F_SETLKW, &lock) == -1){\
                 printf("Cannot unlock the file.\n");} }
@@ -43,30 +45,11 @@ typedef struct{
     int maxThreadNum;
 }mainArgs;
 
-typedef struct{
-    int dest;//destination node
-    int src;//source node
-}edge_t;//src->dest
-
-typedef struct node{
-    int vertex;
-    struct node *next;
-}node_t;
-
-typedef struct{
-    int numVertice;//number of vertices
-    int numEdge;//number of edges
-    node_t **adjLists;//unknown number of vertices, adjaceny lists list
-}graph_t;
 
 int callSigAction();
 void handler(int signalNumber);
 void exitGracefully();
 int daemonBorn();
-int readArguments(int argc, char *argv[], mainArgs *margs);
-node_t* createNode(int v);
-graph_t* createAGraph(int vertices);
-void addEdge(graph_t* graph, edge_t newEdge);
-void destroyGraph(graph_t *g);
-int readFromFile(int fin);
+int readArgumentsServer(int argc, char *argv[], mainArgs *margs);
+int readFromFile(int fin, int choice, graph_t *graph, int *maxNum);//if choice is 0, find the max node num; if 1, add edges to graph
 int initSocket(char* portNum);

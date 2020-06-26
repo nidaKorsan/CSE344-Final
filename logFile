@@ -2,6 +2,80 @@
  Directed Gnutella P2P network from August 8 2002
  Nodes: 6301 Edges: 20777
  FromNodeId	ToNodeId
-Connection from (localhost, 63347)
+buffer issss 
+buffer issss 
+buffer issss 
+buffer issss 
+buffer issss 
+buffer issss 
+buffer issss 
+buffer issss 
+buffer issss 
+buffer issss 0
+buffer issss 
+buffer issss 
+buffer issss 
+buffer issss 
+buffer issss 
+buffer issss 
+buffer issss 
+buffer issss 0
+my max num is 10
+ Directed graph (each unordered pair of nodes is saved once): p2p-Gnutella08.txt 
+ Directed Gnutella P2P network from August 8 2002
+ Nodes: 6301 Edges: 20777
+ FromNodeId	ToNodeId
+buffer issss 
+buffer issss 
+buffer issss 
+buffer issss 
+buffer issss 
+buffer issss 
+buffer issss 
+buffer issss 
+buffer issss 
+buffer issss 0
+buffer issss 
+buffer issss 
+buffer issss 
+buffer issss 
+buffer issss 
+buffer issss 
+buffer issss 
+buffer issss 0
+
+ Vertex 0
+: 10 -> 9 -> 8 -> 7 -> 6 -> 5 -> 4 -> 3 -> 2 -> 1 -> 
+
+ Vertex 1
+: 
+
+ Vertex 2
+: 
+
+ Vertex 3
+: 4 -> 7 -> 8 -> 5 -> 9 -> 6 -> 
+
+ Vertex 4
+: 
+
+ Vertex 5
+: 
+
+ Vertex 6
+: 
+
+ Vertex 7
+: 
+
+ Vertex 8
+: 
+
+ Vertex 9
+: 
+
+ Vertex 10
+: 8 -> 
+Connection from (localhost, 49334)
 In server im the client
 
