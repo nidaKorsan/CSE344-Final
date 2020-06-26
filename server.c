@@ -23,11 +23,11 @@ int main(int argc, char *argv[]){
     if(daemonBorn(&margs)){
         return -1;
     }
-    int temp;
-    readFromFile(margs.fin, 0, NULL, &temp);
-    printf("my max num is %d\n", temp);
+    int temp; double totalTime;
+    if(readFromFile(margs.fin, 0, NULL, &temp, NULL));
     graph_t *graph = createGraph(++temp);
-    readFromFile(margs.fin, 1, graph, &temp);
+    readFromFile(margs.fin, 1, graph, &temp, &totalTime);
+    printServerInfo(margs, *graph, totalTime);
     printGraph(graph);
     initSocket(margs.port);
     destroyGraph(graph);

@@ -140,8 +140,10 @@ int readArgumentsServer(int argc, char *argv[], mainArgs *margs){
 }
 
 
-//Reads from input file
-int readFromFile(int fin, int choice, graph_t *graph, int *maxNum){
+//Reads from input file and adds edges to the graph if asked
+int readFromFile(int fin, int choice, graph_t *graph, int *maxNum, double *tot){
+    clock_t start_t, end_t;
+    start_t = clock();
     struct flock lock;
     memset(&lock, 0, sizeof(lock));
     int bytesRead = 0, num = -1, maxNodeNum = -1, flag = 0;//flag 0 means source
@@ -168,7 +170,6 @@ int readFromFile(int fin, int choice, graph_t *graph, int *maxNum){
                     UNLOCK(fin);
                     return -1;
                 }
-                printf("%s", buffer);
             }
         }
         else if(isdigit(*buffer) != 0){//if read byte is a numeric character
@@ -183,7 +184,6 @@ int readFromFile(int fin, int choice, graph_t *graph, int *maxNum){
                 }                    
                 if(*buffer != 9 && *buffer != 10 && bytesRead != 0){
                     strcat(numBuf, buffer);
-                    printf("buffer issss %s\n",buffer);
                 }
             }
             num = atoi(numBuf);
@@ -199,6 +199,10 @@ int readFromFile(int fin, int choice, graph_t *graph, int *maxNum){
         }
         *buffer = '\0';
     }while(bytesRead != 0);
+    if(choice){
+        end_t = clock();
+        *tot = (double)(end_t - start_t) / CLOCKS_PER_SEC;
+    }
     *maxNum = maxNodeNum;
     return 0;
 }
@@ -263,4 +267,12 @@ int initSocket(char* portNum){
     if (close(cfd) == -1) /* Close connection */
         perror("close");
     return 0;
+}
+
+void printServerInfo(mainArgs margs,graph_t graph, double totalTime){
+    printf("Executing with parameters:\n\
+-i %s\n-p %s\n-o %s\n-s %d\n-x %d\nLoading graph...\n\
+Graph loaded in %.3f seconds with %d nodes and %d edges.\n",\
+    margs.inputPath, margs.port, margs.outputPath, margs.threadNum, margs.maxThreadNum\
+    , totalTime, graph.numVertice, graph.numEdge);
 }

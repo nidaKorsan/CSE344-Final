@@ -39,7 +39,7 @@ void printGraph(graph_t* graph) {
   int v;
   for (v = 0; v < graph->numVertice; v++) {
     node_t* temp = graph->adjLists[v];
-    printf("\n Vertex %d\n: ", v);
+    printf("Vertex %d : ", v);
     while (temp) {
       printf("%d -> ", temp->vertex);
       temp = temp->next;

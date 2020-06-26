@@ -51,5 +51,6 @@ void handler(int signalNumber);
 void exitGracefully();
 int daemonBorn();
 int readArgumentsServer(int argc, char *argv[], mainArgs *margs);
-int readFromFile(int fin, int choice, graph_t *graph, int *maxNum);//if choice is 0, find the max node num; if 1, add edges to graph
+int readFromFile(int fin, int choice, graph_t *graph, int *maxNum, double *tot);//if choice is 0, find the max node num; if 1, add edges to graph
 int initSocket(char* portNum);
+void printServerInfo(mainArgs margs,graph_t graph, double totalTime);
