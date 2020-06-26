@@ -47,3 +47,52 @@ void printGraph(graph_t* graph) {
     printf("\n");
   }
 }
+
+queue_t* initQueue()
+{
+    queue_t* queue = (queue_t*)malloc(sizeof(queue_t));
+    queue->front = NULL;
+    queue->rear = NULL;
+    return queue;
+}
+
+void enqueue(queue_t *queue, int element){
+    qnode_t *nptr = malloc(sizeof(qnode_t));
+    nptr->data =  element;
+    nptr->next = NULL;
+    if (queue->rear == NULL || queue->front == NULL){
+        queue->front = nptr;
+        queue->rear = nptr;
+    }
+    else{
+        queue->rear->next = nptr;
+        queue->rear = queue->rear->next;
+        //queue->rear->next = NULL;
+    }
+}
+void dequeue(queue_t *queue, int *retElem){
+    if (queue->front == NULL || queue->rear == NULL){
+        *retElem = -1;
+    }
+    else{
+        qnode_t *temp;
+        temp = queue->front;
+        queue->front = queue->front->next;
+        //printf("Queue front %p\n", queue->front);
+        //printf("\n\n%s deleted\n", temp->data);
+        *retElem = temp->data;
+        free(temp);
+    }
+}
+
+void display(queue_t *queue)
+{
+    qnode_t *temp;
+    temp = queue->front;
+    while (temp != NULL)
+    {
+        printf("%d\t", temp->data);
+        temp = temp->next;
+    }
+    printf("\n");
+}
