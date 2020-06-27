@@ -40,17 +40,25 @@ typedef struct{
     int fout;
     char *inputPath;
     char *outputPath;
-    char* port;
+    char *port;
     int threadNum;
     int maxThreadNum;
-}mainArgs;
+}mainArgsServer;
 
+typedef struct{
+    int src;
+    int dest;
+    char *ipAdress;
+    char *port;
+}mainArgsClient;
 
 int callSigAction();
 void handler(int signalNumber);
 void exitGracefully();
 int daemonBorn();
-int readArgumentsServer(int argc, char *argv[], mainArgs *margs);
+int readArgumentsServer(int argc, char *argv[], mainArgsServer *margs);
+int readArgumentsClient(int argc, char *argv[], mainArgsClient *margs);
 int readFromFile(int fin, int choice, graph_t *graph, int *maxNum, double *tot);//if choice is 0, find the max node num; if 1, add edges to graph
 int initSocket(char* portNum);
-void printServerInfo(mainArgs margs,graph_t graph, double totalTime);
+void printServerInfo(mainArgsServer margs,graph_t graph, double totalTime);
+int clientConnect(mainArgsClient *margs);

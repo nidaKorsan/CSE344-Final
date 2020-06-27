@@ -1,0 +1,12 @@
+Executing with parameters:
+-i p2p-Gnutella08.txt
+-p 44444
+-o logFile
+-s 3
+-x 70
+Loading graph...
+Graph loaded in 0.891 seconds with 6301 nodes and 20777 edges.
+Path is 0 -> 3 -> 1287 -> 1945 -> 151 -> 158
+Connection from (localhost, 53722)
+In server im the client
+

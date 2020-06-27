@@ -28,7 +28,7 @@ void exitGracefully(){
 
 }
 
-int daemonBorn(mainArgs *margs){
+int daemonBorn(mainArgsServer *margs){
     pid_t sid;
     switch (fork()) { //Become background process 
         case -1:
@@ -74,7 +74,7 @@ int daemonBorn(mainArgs *margs){
 }
 
 //for reading command line arguments
-int readArgumentsServer(int argc, char *argv[], mainArgs *margs){
+int readArgumentsServer(int argc, char *argv[], mainArgsServer *margs){
     int opt;
     int flag_i = 0, flag_o = 0, flag_p = 0, flag_s = 0, flag_x = 0;
     //./server -i pathToFile -p PORT -o pathToLogFile -s 4 -x 24
@@ -139,6 +139,64 @@ int readArgumentsServer(int argc, char *argv[], mainArgs *margs){
     return 0;
 }
 
+//for reading command line arguments
+int readArgumentsClient(int argc, char *argv[], mainArgsClient *margs){
+    int opt;
+    int flag_a = 0, flag_p = 0, flag_s = 0, flag_d = 0;
+    //./server -i pathToFile -p PORT -o pathToLogFile -s 4 -x 24
+    if(argc != 9) {
+        printf("Wrong argument count. There should be exactly 9.\nUsage case : ./client -a 127.0.0.1 -p PORT -s 768 -d 979\n");
+        return -1;
+    }
+    while((opt = getopt(argc, argv, "a:p:s:d:")) != -1)
+    {
+        switch(opt)
+        {
+            case 'a':
+                if (flag_a){
+                    printf("-a option is already given.\nUsage case : ./client -a 127.0.0.1 -p PORT -s 768 -d 979\n");
+                    return -1;
+                } /*If -a parameter is already given give error*/
+                margs->ipAdress = optarg;
+                //printf("reading %s %s\n",optarg, margs->ipAdress);
+                flag_a = 1;
+                break;
+            case 'p':
+                if(flag_p){
+                    printf("-p option is already given.\nUsage case : ./client -a 127.0.0.1 -p PORT -s 768 -d 979\n");
+                    return -1;
+                } /*If -p parameter is already given give error*/
+                margs->port = optarg;
+                flag_p = 1;
+                break;
+            case 's':
+                if(flag_s){
+                    printf("-s option is already given.\nUsage case : ./client -a 127.0.0.1 -p PORT -s 768 -d 979\n");
+                    return -1;
+                } /*If -s parameter is already given give error*/
+                if((margs->src = atoi(optarg)) < 2){
+                    printf("-s argument cannot be less than 2.\n");
+                    return -1;
+                }
+                flag_s = 1;
+                break;
+            case 'd':
+                if(flag_d){
+                    printf("-d option is already given.\nUsage case : ./client -a 127.0.0.1 -p PORT -s 768 -d 979\n");
+                    return -1;
+                } /*If -d parameter is already given give error*/
+                margs->dest = atoi(optarg);
+                flag_d = 1;
+                break;                                
+            case '?':
+                printf("Unknown option\nUsage case : ./client -a 127.0.0.1 -p PORT -s 768 -d 979\n");
+                return -1;
+        default:
+            break;
+        }
+    }
+    return 0;
+}
 
 //Reads from input file and adds edges to the graph if asked
 int readFromFile(int fin, int choice, graph_t *graph, int *maxNum, double *tot){
@@ -195,7 +253,7 @@ int readFromFile(int fin, int choice, graph_t *graph, int *maxNum, double *tot){
             }
         }
         if(choice && !flag && tempEdge.dest != -1 && tempEdge.src != -1 && bytesRead != 0){
-            printf("%d	%d\n",tempEdge.src,tempEdge.dest);
+            //printf("%d	%d\n",tempEdge.src,tempEdge.dest);
             fflush(stdout);
             addEdge(graph, tempEdge);
         }
@@ -235,23 +293,23 @@ int initSocket(char* portNum){
     for (rp = result; rp != NULL; rp = rp->ai_next) {
         lfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
         if (lfd == -1)
-        continue; /* On error, try next address */
-
+            continue; /* On error, try next address */
         if (setsockopt(lfd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval)) == -1)
-        exit(-1);
+            return -1;
         if (bind(lfd, rp->ai_addr, rp->ai_addrlen) == 0)
-        break; /* Success */
+            break; /* Success */
         /* bind() failed: close this socket and try next address */
         close(lfd);
     }
     if (rp == NULL)
         printf("Could not bind socket to any address");
+        
     if (listen(lfd, BACKLOG) == -1)
-        exit(-1);
+        return -1;
     addrlen = sizeof(struct sockaddr_storage);
     cfd = accept(lfd, (struct sockaddr *) &claddr, &addrlen);
     if (cfd == -1) {
-        perror("accept");
+        printf("Error accept() %s\n", strerror(errno));
         //continue;
     }
     close(lfd);
@@ -271,10 +329,47 @@ int initSocket(char* portNum){
     return 0;
 }
 
-void printServerInfo(mainArgs margs,graph_t graph, double totalTime){
+void printServerInfo(mainArgsServer margs,graph_t graph, double totalTime){
     printf("Executing with parameters:\n\
 -i %s\n-p %s\n-o %s\n-s %d\n-x %d\nLoading graph...\n\
 Graph loaded in %.3f seconds with %d nodes and %d edges.\n",\
     margs.inputPath, margs.port, margs.outputPath, margs.threadNum, margs.maxThreadNum\
     , totalTime, graph.numVertice, graph.numEdge);
+}
+
+int clientConnect(mainArgsClient *margs){
+    int cfd;
+    struct addrinfo hints;
+    struct addrinfo *result, *rp;
+    /* Call getaddrinfo() to obtain a list of addresses that
+    we can try connecting to */
+    memset(&hints, 0, sizeof(struct addrinfo));
+    hints.ai_canonname = NULL;
+    hints.ai_addr = NULL;
+    hints.ai_next = NULL;
+    hints.ai_family = AF_UNSPEC; /* Allows IPv4 or IPv6 */
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_flags = AI_NUMERICSERV;
+    //printf("client connect, %s\n", margs->ipAdress);
+    if (getaddrinfo(margs->ipAdress, margs->port, &hints, &result) != 0)
+        return -1;
+    /* Walk through returned list until we find an address structure
+    that can be used to successfully connect a socket */
+    for (rp = result; rp != NULL; rp = rp->ai_next) {
+        cfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+        if (cfd == -1)
+            continue; /* On error, try next address */
+        if (connect(cfd, rp->ai_addr, rp->ai_addrlen) != -1){
+            break; /* Success */
+        }
+        printf("Error connect  %s\n", strerror(errno));
+        /* Connect failed: close this socket and try next address */
+        close(cfd);
+    }
+    if (rp == NULL){
+        printf("Could not connect socket to any address\n");
+        return -1;
+    }
+    freeaddrinfo(result);
+    return cfd;  
 }
