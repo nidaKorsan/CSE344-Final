@@ -25,7 +25,7 @@ void handler(int signalNumber){
 }
 
 void exitGracefully(){
-
+    unlink("/tmp/MyUniqueName");close(myfd);
 }
 
 int daemonBorn(mainArgsServer *margs){
@@ -58,15 +58,18 @@ int daemonBorn(mainArgsServer *margs){
     //Close all of the open file descriptors (all possible ones)
     for (i = sysconf(_SC_OPEN_MAX); i >= 0; close (i--));
     //open input file and output log file
+    margs->fout = open(margs->outputPath, O_RDWR | O_CREAT);
+    if (margs->fout != STDIN_FILENO) /* 'fd' should be 0 */
+    return -1;
+    if (dup2(STDIN_FILENO, STDOUT_FILENO) != STDOUT_FILENO)
+    return -1;
+    if (dup2(STDIN_FILENO, STDERR_FILENO) != STDERR_FILENO)
+    return -1;
     if((margs->fin = open(margs->inputPath, O_RDWR)) == -1){
         printf("Error while opening file %s\n", strerror(errno));
         return -1;
     }
-    if((margs->fout = open(margs->outputPath, O_RDWR | O_CREAT)) == -1){
-        printf("Error while opening file %s\n", strerror(errno));
-        close(margs->fin);
-        return -1;
-    }
+
     /*char lokum[25]; strcpy(lokum,"lokumgib"); 
     write(margs->fout, lokum, strlen(lokum));*/
     //sleep(6);
@@ -259,6 +262,7 @@ int readFromFile(int fin, int choice, graph_t *graph, int *maxNum, double *tot){
         end_t = clock();
         *tot = (double)(end_t - start_t) / CLOCKS_PER_SEC;
     }
+    UNLOCK(fin);
     *maxNum = maxNodeNum;
     return 0;
 }

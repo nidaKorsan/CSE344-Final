@@ -15,6 +15,7 @@
 #include <sys/stat.h>
 #include<sys/types.h>
 #include <sys/mman.h>
+#include <sys/file.h>
 #include<signal.h>
 #include <pthread.h>
 #include <stdarg.h>
@@ -81,6 +82,7 @@ typedef struct{
 
 sharedAmong_t shared;
 time_t ltime;
+int myfd;
 
 
 int callSigAction();

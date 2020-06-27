@@ -13,8 +13,14 @@
 #include "recipes.h"
 #define CLOSEF(f) {if (close(f) == -1) {printf("Error while closing the file.\n");}}
 
-
 int main(int argc, char *argv[]){
+    //TODO uncomment this beauty
+    /*myfd = open("/tmp/MyUniqueName", O_CREAT|O_EXCL);
+    if ( myfd < 0 )
+    {
+        write(2, "I am already running!\n", 23);
+        exit(1);
+    }*/
     time(&ltime);
     memset(&shared, 0, sizeof(sharedAmong_t));
     int temp, lfd, ret, cfd;
