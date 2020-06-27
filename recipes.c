@@ -174,10 +174,7 @@ int readArgumentsClient(int argc, char *argv[], mainArgsClient *margs){
                     printf("-s option is already given.\nUsage case : ./client -a 127.0.0.1 -p PORT -s 768 -d 979\n");
                     return -1;
                 } /*If -s parameter is already given give error*/
-                if((margs->src = atoi(optarg)) < 2){
-                    printf("-s argument cannot be less than 2.\n");
-                    return -1;
-                }
+                margs->src = atoi(optarg);
                 flag_s = 1;
                 break;
             case 'd':
@@ -254,7 +251,6 @@ int readFromFile(int fin, int choice, graph_t *graph, int *maxNum, double *tot){
         }
         if(choice && !flag && tempEdge.dest != -1 && tempEdge.src != -1 && bytesRead != 0){
             //printf("%d	%d\n",tempEdge.src,tempEdge.dest);
-            fflush(stdout);
             addEdge(graph, tempEdge);
         }
         *buffer = '\0';
@@ -268,15 +264,10 @@ int readFromFile(int fin, int choice, graph_t *graph, int *maxNum, double *tot){
 }
 
 int initSocket(char* portNum){
-    struct sockaddr_storage claddr;
-    int lfd, cfd, optval;
-    socklen_t addrlen;
+    int lfd, optval;
     struct addrinfo hints;
     struct addrinfo *result, *rp;
     #define ADDRSTRLEN (NI_MAXHOST + NI_MAXSERV + 10)
-    char addrStr[ADDRSTRLEN];
-    char host[NI_MAXHOST];
-    char service[NI_MAXSERV];
     if (signal(SIGPIPE, SIG_IGN) == SIG_ERR)
         exit(-1);
     memset(&hints, 0, sizeof(struct addrinfo));
@@ -302,38 +293,30 @@ int initSocket(char* portNum){
         close(lfd);
     }
     if (rp == NULL)
-        printf("Could not bind socket to any address");
-        
+        printf("Could not bind socket to any address\n");
     if (listen(lfd, BACKLOG) == -1)
         return -1;
-    addrlen = sizeof(struct sockaddr_storage);
-    cfd = accept(lfd, (struct sockaddr *) &claddr, &addrlen);
-    if (cfd == -1) {
-        printf("Error accept() %s\n", strerror(errno));
-        //continue;
-    }
-    close(lfd);
-    if (getnameinfo((struct sockaddr *) &claddr, addrlen, host, NI_MAXHOST, service, NI_MAXSERV, 0) == 0)
-        snprintf(addrStr, ADDRSTRLEN, "(%s, %s)", host, service);
-    else
-        snprintf(addrStr, ADDRSTRLEN, "(?UNKNOWN?)");
-    printf("Connection from %s\n", addrStr);
-    if (write(cfd, "Im sending client smt\n", 24) == -1)
-        printf("Error write\n");
-    char buffer[50];
-    if(read(cfd, buffer, 30) == -1)
-        printf("Error read\n");
-    printf("In server %s\n", buffer); 
-    if (close(cfd) == -1) /* Close connection */
-        perror("close");
-    return 0;
+
+    return lfd;
 }
 
 void printServerInfo(mainArgsServer margs,graph_t graph, double totalTime){
-    printf("Executing with parameters:\n\
--i %s\n-p %s\n-o %s\n-s %d\n-x %d\nLoading graph...\n\
-Graph loaded in %.3f seconds with %d nodes and %d edges.\n",\
-    margs.inputPath, margs.port, margs.outputPath, margs.threadNum, margs.maxThreadNum\
+    time(&ltime);
+    char buf[50];
+    printf("%s : Executing with parameters:\n\
+%s : -i %s\n\
+%s : -p %s\n\
+%s : -o %s\n\
+%s : -s %d\n\
+%s : -x %d\n\
+%s : Loading graph...\n\
+%s : Graph loaded in %.3f seconds with %d nodes and %d edges.\n",strtok(ctime_r(&ltime, buf), "\n"), \
+    strtok(ctime_r(&ltime, buf), "\n"), margs.inputPath,\
+    strtok(ctime_r(&ltime, buf), "\n"),margs.port, \
+    strtok(ctime_r(&ltime, buf), "\n"), margs.outputPath, \
+    strtok(ctime_r(&ltime, buf), "\n"),margs.threadNum, \
+    strtok(ctime_r(&ltime, buf), "\n"), margs.maxThreadNum,\
+    strtok(ctime_r(&ltime, buf), "\n"),strtok(ctime_r(&ltime, buf), "\n")\
     , totalTime, graph.numVertice, graph.numEdge);
 }
 
@@ -372,4 +355,113 @@ int clientConnect(mainArgsClient *margs){
     }
     freeaddrinfo(result);
     return cfd;  
+}
+
+void* daemonThreadAct(void *arg){
+    int id = (int) (long)arg;
+    char *cret, buf[50];
+    int ret;
+    time(&ltime);
+    printf("%s : Thread #%d: waiting for connection\n", strtok(ctime_r(&ltime, buf), "\n"), id);
+    int socketIdDaemon;
+    while(1){
+        MLOCK(&shared.assignWorkMutex);
+        while(shared.socketId == -1)
+            pthread_cond_wait(&shared.assignWorkCond, &shared.assignWorkMutex);
+        socketIdDaemon = shared.socketId;
+        shared.socketId = -1;
+        pthread_cond_signal(&shared.noWorkCond);//signal to the main thread
+        MUNLOCK(&shared.assignWorkMutex);
+
+        MLOCK(&shared.loadFactorMutex);
+        ++shared.busyTNum;//Increase busy thread count
+        time(&ltime);
+        printf("%s : A connection has been delegated to thread id #%d, system load %.3f%%\n", strtok(ctime_r(&ltime, buf), "\n"), id, (double)shared.busyTNum / (double)shared.currentThreadCount* 100);
+        pthread_cond_signal(&shared.loadFactorCond);//signal to the pooler
+        MUNLOCK(&shared.loadFactorMutex);
+
+        int src, dest;
+        if(read(socketIdDaemon, &src, sizeof(src)) == -1){
+            printf("Error read %s\n", strerror(errno));
+            return NULL;
+        }
+        if(read(socketIdDaemon, &dest, sizeof(dest)) == -1){
+            printf("Error read %s\n", strerror(errno));
+            return NULL;
+        }
+        time(&ltime);
+        printf("%s : Thread #%d: searching database for a path from node %d to node %d\n",strtok(ctime_r(&ltime, buf), "\n"), id, src, dest);
+        //database search
+        //if database search is successful
+            //print path
+        //else
+        {
+            time(&ltime);
+            printf("%s : Thread #%d: no path in database, calculating %d->%d\n",strtok(ctime_r(&ltime, buf), "\n"), id, src, dest);
+            cret = bfsSearch(shared.graph, src, dest);
+            if(!strcmp("NO PATH", cret)){
+                time(&ltime);
+                printf("%s : Thread #%d: path not possible from node %d to %d\n", strtok(ctime_r(&ltime, buf), "\n"), id, src, dest);
+                if(write(socketIdDaemon, "NO PATH", 8) == -1){
+                    printf("Error write %s\n", strerror(errno));
+                    return NULL;//raise
+                }
+            }
+            else{
+                time(&ltime);
+                printf("%s : Thread #%d: path calculated: %s\n",strtok(ctime_r(&ltime, buf), "\n"), id, cret);
+                printf("%s : Thread #%d: responding to client and adding path to database\n",strtok(ctime_r(&ltime, buf), "\n"), id);
+                //add path to database
+                if(write(socketIdDaemon, cret, strlen(cret)) == -1){
+                    printf("Error write %s\n", strerror(errno));
+                    return NULL;//raise
+                }
+                if(write(socketIdDaemon, "!", 2) == -1){
+                    printf("Error write %s\n", strerror(errno));
+                    return NULL;//raise
+                }
+            }
+        }
+        MLOCK(&shared.loadFactorMutex);
+        --shared.busyTNum;
+        MUNLOCK(&shared.loadFactorMutex);
+    }
+    return NULL;
+}
+
+void* poolerThreadAct(void *arg){
+    char buf[50];
+    mainArgsServer * marg= (mainArgsServer *)arg;
+    int ret, optval;
+    shared.currentThreadCount = marg->threadNum;
+    while( shared.idIndex < marg->threadNum + 1){
+        optval = shared.idIndex-1;
+        if((ret = pthread_create(&shared.thread_id[shared.idIndex++], NULL, daemonThreadAct, (void *)(long)(optval))) != 0){
+            printf("Error pthread_create %s\n", strerror(ret));
+            raise(SIGINT);
+        }
+    }
+    printf("%s : A pool of %d threads has been created\n",strtok(ctime_r(&ltime, buf), "\n"), shared.idIndex - 1);
+    while(marg->threadNum != marg->maxThreadNum){   
+        MLOCK(&shared.loadFactorMutex);
+        //if load factor is more than 75%
+        while((double)shared.busyTNum / (double)marg->threadNum < 0.75){
+            pthread_cond_wait(&shared.loadFactorCond, &shared.loadFactorMutex);
+        }
+        marg->threadNum = marg->threadNum * 1.25;
+        if(marg->threadNum > marg->maxThreadNum)
+            marg->threadNum = marg->maxThreadNum;
+        shared.currentThreadCount = marg->threadNum;
+        shared.thread_id = realloc(shared.thread_id, marg->threadNum * sizeof(pthread_t));
+        while( shared.idIndex < marg->threadNum + 1){
+            optval = shared.idIndex-1;
+            if((ret = pthread_create(&shared.thread_id[shared.idIndex++], NULL, daemonThreadAct, (void *)(long)(optval))) != 0){
+                printf("Error pthread_create %s\n", strerror(ret));
+                raise(SIGINT);
+            }
+        }
+        printf("%s : System load %.2f%%, pool extended to %d threads\n",strtok(ctime_r(&ltime, buf), "\n"), (double)shared.busyTNum / (double)marg->threadNum, marg->threadNum);
+        MUNLOCK(&shared.loadFactorMutex);
+    }
+    return 0;
 }

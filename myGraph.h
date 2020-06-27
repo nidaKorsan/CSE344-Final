@@ -34,6 +34,7 @@ graph_t* createGraph(int vertices);
 void addEdge(graph_t* graph, edge_t newEdge);
 void destroyGraph(graph_t *g);
 void printGraph(graph_t* graph);
+
 queue_t* initQueue();
 void enqueue(queue_t *queue, int element);
 void dequeue(queue_t *queue, int *retElem);

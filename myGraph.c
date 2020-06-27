@@ -153,7 +153,7 @@ char* bfsSearch(graph_t *graph, int source, int destination){
 		}
 	}
 	if(!flag){
-		strcpy(ret, "Given source and destination are not connected\n");
+		strcpy(ret, "NO PATH");
 		return ret;
 	}
 	else{

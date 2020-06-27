@@ -32,8 +32,20 @@
 #define LOCK(f) { lock.l_type = F_WRLCK;\
             if (fcntl(f, F_SETLKW, &lock) == -1){\
                 printf("Cannot lock the file.\n");} }
+#define MLOCK(mutex){if((ret = pthread_mutex_lock(mutex)) != 0){\
+            printf("Error pthread_mutex_lock (florist) %s\n", strerror(ret));\
+            return (void *)-1;}}
+#define MUNLOCK(mutex){if((ret = pthread_mutex_unlock(mutex)) != 0){\
+            printf("Error pthread_mutex_unlock (florist) %s\n", strerror(ret));\
+            return (void *)-1;}}   
+
+#define MLOCK_INT(mutex){if((ret = pthread_mutex_lock(mutex)) != 0){\
+            printf("Error pthread_mutex_lock (florist) %s\n", strerror(ret));\
+            return -1;}}
+#define MUNLOCK_INT(mutex){if((ret = pthread_mutex_unlock(mutex)) != 0){\
+            printf("Error pthread_mutex_unlock (florist) %s\n", strerror(ret));\
+            return -1;}}   
 #define BACKLOG 50
-#define PORT "44444"
 
 typedef struct{
     int fin;
@@ -52,6 +64,25 @@ typedef struct{
     char *port;
 }mainArgsClient;
 
+typedef struct{
+    int id;
+}daemonThreadArgs;
+
+typedef struct{
+    pthread_mutex_t assignWorkMutex, loadFactorMutex;
+    pthread_cond_t assignWorkCond, noWorkCond, loadFactorCond;
+    pthread_t *thread_id;
+    int socketId;
+    int idIndex;
+    int busyTNum;
+    int currentThreadCount;
+    graph_t *graph;
+}sharedAmong_t;
+
+sharedAmong_t shared;
+time_t ltime;
+
+
 int callSigAction();
 void handler(int signalNumber);
 void exitGracefully();
@@ -62,3 +93,5 @@ int readFromFile(int fin, int choice, graph_t *graph, int *maxNum, double *tot);
 int initSocket(char* portNum);
 void printServerInfo(mainArgsServer margs,graph_t graph, double totalTime);
 int clientConnect(mainArgsClient *margs);
+void* daemonThreadAct(void *arg);
+void* poolerThreadAct(void *arg);

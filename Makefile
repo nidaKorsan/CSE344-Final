@@ -1,9 +1,14 @@
 CC = gcc #compiler
 objects = server client
 all : $(objects)
-server:
-	$(CC) -o server -Wall server.c recipes.c myGraph.c -pthread -lrt
-client:
-	$(CC) -o client -Wall client.c recipes.c myGraph.c -pthread -lrt
+
+%.o : %.c recipes.h myGraph.h 
+	$(CC) -c $< -Wall -o $@ -pthread -lrt
+
+server: server.o recipes.o myGraph.o
+	$(CC) $^ -o $@ -Wall -pthread -lrt
+client: client.o recipes.o myGraph.o
+	$(CC) $^ -o $@ -Wall -pthread -lrt
+
 clean:
-	rm $(objects)
+	rm  *.o
