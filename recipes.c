@@ -25,7 +25,7 @@ void handler(int signalNumber){
 }
 
 void exitGracefully(){
-    unlink("/tmp/MyUniqueName");close(myfd);
+    //unlink("/tmp/MyUniqueName");close(myfd);
 }
 
 int daemonBorn(mainArgsServer *margs){

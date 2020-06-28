@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #define INTMAX 2147483647
 typedef struct{
     int dest;//destination node
@@ -29,6 +30,20 @@ typedef struct{
     qnode_t *rear;
 }queue_t;
 
+typedef struct lnode{
+    char* data;
+    int keysrc;
+    int keydest;
+    struct lnode *next;
+}lnode_t;
+
+typedef struct{
+    lnode_t *head;
+}linkedList_t;
+
+//lnode_t *current = NULL;
+
+
 node_t* createNode(int v);
 graph_t* createGraph(int vertices);
 void addEdge(graph_t* graph, edge_t newEdge);
@@ -43,3 +58,9 @@ void freeQueue(queue_t *queue);
 int isQueueEmpty(queue_t *queue);
 char * bfsSearch(graph_t *graph, int source, int destination);
 
+linkedList_t* initList();
+void printList(linkedList_t *list);
+void insertFirst(linkedList_t *list, int keysrc, int keydest, char* data);
+int isEmptyList(linkedList_t *list);
+lnode_t* find(linkedList_t *list, int keysrc, int keydest);
+void destroyList(linkedList_t *list);

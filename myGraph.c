@@ -178,3 +178,71 @@ char* bfsSearch(graph_t *graph, int source, int destination){
 	freeQueue(queue);
 	return ret;
 }
+
+void printList(linkedList_t *list) {
+   lnode_t*ptr = list->head;
+   printf("\n[ ");
+	
+   //start from the beginning
+   while(ptr != NULL) {
+      printf("(%d %d,%s) ",ptr->keysrc, ptr->keydest, ptr->data);
+      ptr = ptr->next;
+   }
+   printf(" ]");
+}
+
+void insertFirst(linkedList_t *list, int keysrc, int keydest, char* data) {
+    //create a link
+    lnode_t *link = (lnode_t*) malloc(sizeof(lnode_t));
+    link->keysrc = keysrc;
+    link->keydest = keydest;
+    link->data = data;
+    //point it to old first node
+    link->next = list->head;
+    //point first to new first node
+    list->head = link;
+}
+
+int isEmptyList(linkedList_t *list) {
+   return (list->head == NULL) ? 1 : 0;
+}
+
+//find a link with given key
+lnode_t* find(linkedList_t *list, int keysrc, int keydest){
+    //start from the first link
+    lnode_t* current = list->head;
+    //if list is empty
+    if(isEmptyList(list)){
+        return NULL;
+    }
+    //navigate through list
+    while(current->keysrc != keysrc && current->keydest != keydest){
+        //if it is last node
+        if(current->next == NULL){
+            return NULL;
+        }
+        else{
+            //go to next link
+            current = current->next;
+        }
+    }      
+    //if data found, return the current Link
+    return current;
+}
+
+void destroyList(linkedList_t *list){
+    while(list->head != NULL){
+        lnode_t*tempLink = list->head;
+        //mark next to first link as first 
+        list->head = list->head->next;
+        free(tempLink->data);
+        free(tempLink);
+    }
+	free(list);
+}
+
+linkedList_t* initList(){
+	linkedList_t *list = (linkedList_t*)malloc(sizeof(linkedList_t));
+	list->head = NULL;
+	return list;
+}
