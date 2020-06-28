@@ -17,7 +17,6 @@ int main(int argc, char *argv[]){
     printf("%s : Client (%d) connecting to %s:%s\n",strtok(ctime_r(&ltime, buf), "\n"), pid, margs.ipAdress,margs.port);
     int cfd;
     if((cfd = clientConnect(&margs)) == -1){
-    printf("Im in client print\n");
         return -1;
     }
     struct timespec start, finish;
@@ -50,7 +49,6 @@ int main(int argc, char *argv[]){
         ++bufi;
         if(*lil != '\n')
             strcat(buffer, lil);
-        //printf("lil %d\n", *lil);
     }while(*lil != '\n');
     clock_gettime(CLOCK_REALTIME, &finish); 
     time(&ltime);

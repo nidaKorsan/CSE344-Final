@@ -199,9 +199,9 @@ void printList(linkedList_t *list) {
 
 void insertFirst(linkedList_t *list, int keysrc, int keydest, char* data) {
     char *temp = find(list, keysrc, keydest);
-    printf("char data in insert %s\n", data);
+    //printf("char data in insert %s\n", data);
     if(temp == NULL){//if it's not already in list
-        printf("Its not in the list %d->%d\n", keysrc, keydest);
+        //printf("Its not in the list %d->%d\n", keysrc, keydest);
         //create a link
         lnode_t *link = (lnode_t*) malloc(sizeof(lnode_t));
         link->keysrc = keysrc;
@@ -228,7 +228,7 @@ char* find(linkedList_t *list, int keysrc, int keydest){
         return NULL;
     }
     //navigate through list
-        printf("current key %d %d, given key %d %d\n", current->keysrc, current->keydest, keysrc, keydest);
+        //printf("current key %d %d, given key %d %d\n", current->keysrc, current->keydest, keysrc, keydest);
     while(current->keysrc != keysrc || current->keydest != keydest){
         //if it is last node
         if(current->next == NULL){

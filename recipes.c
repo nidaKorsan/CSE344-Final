@@ -79,19 +79,19 @@ int daemonBorn(mainArgsServer *margs){
 //for reading command line arguments
 int readArgumentsServer(int argc, char *argv[], mainArgsServer *margs){
     int opt;
-    int flag_i = 0, flag_o = 0, flag_p = 0, flag_s = 0, flag_x = 0;
+    int flag_i = 0, flag_o = 0, flag_p = 0, flag_s = 0, flag_x = 0, flag_r = 0;
     //./server -i pathToFile -p PORT -o pathToLogFile -s 4 -x 24
-    if(argc != 11) {
-        printf("Wrong argument count. There should be exactly 11.\nUsage case : ./server -i pathToFile -p PORT -o pathToLogFile -s 4 -x 24\n");
+    if(argc != 13) {
+        printf("Wrong argument count. There should be exactly 11.\nUsage case : ./server -i pathToFile -p PORT -o pathToLogFile -s 4 -x 24 -r 0\n");
         return -1;
     }
-    while((opt = getopt(argc, argv, "i:p:o:s:x:")) != -1)
+    while((opt = getopt(argc, argv, "i:p:o:s:x:r:")) != -1)
     {
         switch(opt)
         {
             case 'i':
                 if (flag_i){
-                    printf("-i option is already given.\nUsage case : ./server -i pathToFile -p PORT -o pathToLogFile -s 4 -x 24\n");
+                    printf("-i option is already given.\nUsage case : ./server -i pathToFile -p PORT -o pathToLogFile -s 4 -x 24 -r 0\n");
                     return -1;
                 } /*If -i parameter is already given give error*/
                 margs->inputPath = optarg;
@@ -99,7 +99,7 @@ int readArgumentsServer(int argc, char *argv[], mainArgsServer *margs){
                 break;
             case 'p':
                 if(flag_p){
-                    printf("-p option is already given.\nUsage case : ./server -i pathToFile -p PORT -o pathToLogFile -s 4 -x 24\n");
+                    printf("-p option is already given.\nUsage case : ./server -i pathToFile -p PORT -o pathToLogFile -s 4 -x 24 -r 0\n");
                     return -1;
                 } /*If -p parameter is already given give error*/
                 margs->port = optarg;
@@ -107,7 +107,7 @@ int readArgumentsServer(int argc, char *argv[], mainArgsServer *margs){
                 break;
             case 'o':
                 if(flag_o){
-                    printf("-o option is already given.\nUsage case : ./server -i pathToFile -p PORT -o pathToLogFile -s 4 -x 24\n");
+                    printf("-o option is already given.\nUsage case : ./server -i pathToFile -p PORT -o pathToLogFile -s 4 -x 24 -r 0\n");
                     return -1;
                 } /*If -o parameter is already given give error*/
                 margs->outputPath = optarg;
@@ -115,7 +115,7 @@ int readArgumentsServer(int argc, char *argv[], mainArgsServer *margs){
                 break;
             case 's':
                 if(flag_s){
-                    printf("-s option is already given.\nUsage case : ./server -i pathToFile -p PORT -o pathToLogFile -s 4 -x 24\n");
+                    printf("-s option is already given.\nUsage case : ./server -i pathToFile -p PORT -o pathToLogFile -s 4 -x 24 -r 0\n");
                     return -1;
                 } /*If -s parameter is already given give error*/
                 if((margs->threadNum = atoi(optarg)) < 2){
@@ -126,14 +126,26 @@ int readArgumentsServer(int argc, char *argv[], mainArgsServer *margs){
                 break;
             case 'x':
                 if(flag_x){
-                    printf("-x option is already given.\nUsage case : ./server -i pathToFile -p PORT -o pathToLogFile -s 4 -x 24\n");
+                    printf("-x option is already given.\nUsage case : ./server -i pathToFile -p PORT -o pathToLogFile -s 4 -x 24 -r 0\n");
                     return -1;
                 } /*If -x parameter is already given give error*/
                 margs->maxThreadNum = atoi(optarg);
                 flag_x = 1;
-                break;                                
+                break;
+            case 'r':
+                if(flag_r){
+                    printf("-r option is already given.\nUsage case : ./server -i pathToFile -p PORT -o pathToLogFile -s 4 -x 24 -r 0\n");
+                    return -1;
+                } /*If -r parameter is already given give error*/
+                margs->prio = atoi(optarg);
+                if(margs->prio != 0 && margs->prio != 1 && margs->prio != 2){
+                    printf("Wrong value for -r argument, can be 0,1,2.\nUsage case : ./server -i pathToFile -p PORT -o pathToLogFile -s 4 -x 24 -r 0\n");
+                    return -1;
+                }
+                flag_r = 1;
+                break;                                        
             case '?':
-                printf("Unknown option\nUsage case : ./server -i pathToFile -p PORT -o pathToLogFile -s 4 -x 24\n");
+                printf("Unknown option\nUsage case : ./server -i pathToFile -p PORT -o pathToLogFile -s 4 -x 24 -r 0\n");
                 return -1;
         default:
             break;
@@ -361,6 +373,50 @@ int clientConnect(mainArgsClient *margs){
     return cfd;  
 }
 
+void* prioritize1(){
+    int ret;
+    MLOCK(&shared.m);
+    while((shared.AW + shared.WW) > 0){
+        shared.WR++;//waiting reader
+        pthread_cond_wait(&shared.okToRead, &shared.m);
+        shared.WR--;
+    }
+    shared.AR++;//active reader
+    MUNLOCK(&shared.m);
+    return NULL;
+}
+void* prioritize2(){
+    int ret;
+    MLOCK(&shared.m);
+    shared.AR--;
+    if(shared.AR == 0 && shared.WW > 0)
+        pthread_cond_signal(&shared.okToWrite);
+    MUNLOCK(&shared.m);
+    return NULL;
+}
+void* prioritize3(){
+    int ret;
+    MLOCK(&shared.m);
+    while((shared.AW + shared.AR) > 0){// if any readers or writers, wait
+        shared.WW++;// waiting writer
+        pthread_cond_wait(&shared.okToWrite, &shared.m);
+        shared.WW--;
+    }
+    shared.AW++;
+    MUNLOCK(&shared.m);
+    return NULL;
+}
+void* prioritize4(){
+    int ret;
+    MLOCK(&shared.m);
+    shared.AW--;
+    if(shared.WW > 0)// give priority to other writers
+        pthread_cond_signal(&shared.okToWrite);
+    else if(shared.WR > 0)
+        pthread_cond_broadcast(&shared.okToRead);
+    MUNLOCK(&shared.m);
+    return NULL;
+}
 void* daemonThreadAct(void *arg){
     int id = (int) (long)arg;
     char *cret, buf[50];
@@ -383,7 +439,6 @@ void* daemonThreadAct(void *arg){
         printf("%s : A connection has been delegated to thread id #%d, system load %.3f%%\n", strtok(ctime_r(&ltime, buf), "\n"), id, (double)shared.busyTNum / (double)shared.currentThreadCount* 100);
         pthread_cond_signal(&shared.loadFactorCond);//signal to the pooler
         MUNLOCK(&shared.loadFactorMutex);
-
         int src, dest;
         if(read(socketIdDaemon, &src, sizeof(src)) == -1){
             printf("Error read %s\n", strerror(errno));
@@ -396,56 +451,100 @@ void* daemonThreadAct(void *arg){
         time(&ltime);
         printf("%s : Thread #%d: searching database for a path from node %d to node %d\n",strtok(ctime_r(&ltime, buf), "\n"), id, src, dest);
         //database search
-        printList(shared.cache);
-        cret = find(shared.cache, src, dest);
-        //if database search is successful
-        if(cret != NULL){
-            //print path
+        //printList(shared.cache);
+        if(src < 0 || dest < 0){//negative number check for given nodes, automatic no path conclusion
             time(&ltime);
-            printf("%s : Thread #%d: path found in database: %s\n", strtok(ctime_r(&ltime, buf),"\n"), id, cret);
-            if(write(socketIdDaemon, cret, strlen(cret)) == -1){
+            printf("%s : Thread #%d: path not possible from node %d to %d\n", strtok(ctime_r(&ltime, buf), "\n"), id, src, dest);
+            if(write(socketIdDaemon, "NO PATH\n", 9) == -1){
                 printf("Error write %s\n", strerror(errno));
                 return NULL;//raise
-            }
-            if(write(socketIdDaemon, "\n", 2) == -1){
-                printf("Error write %s\n", strerror(errno));
-                return NULL;//raise
-            } 
+            }            
         }
         else{
-            time(&ltime);
-            printf("%s : Thread #%d: no path in database, calculating %d->%d\n",strtok(ctime_r(&ltime, buf), "\n"), id, src, dest);
-            cret = bfsSearch(shared.graph, src, dest);
-            if(!strcmp("NO PATH", cret)){
-                time(&ltime);
-                printf("%s : Thread #%d: path not possible from node %d to %d\n", strtok(ctime_r(&ltime, buf), "\n"), id, src, dest);
-                if(write(socketIdDaemon, "NO PATH\n", 9) == -1){
-                    printf("Error write %s\n", strerror(errno));
-                    return NULL;//raise
+            //searching thread
+            if(shared.prio == 0)
+                prioritize1();
+            else if(shared.prio == 1)
+                prioritize3();
+            else if(shared.prio == 2);
+            //database access
+            cret = find(shared.cache, src, dest);
+            if(shared.prio == 0)
+                prioritize2();
+            else if(shared.prio == 1)
+                prioritize4();
+            else if(shared.prio == 2);
+            //if database search is successful
+            if(cret != NULL){
+                if(!strcmp(cret, "NO PATH")){
+                    time(&ltime);
+                    printf("%s : Thread #%d: path not possible from node %d to %d\n", strtok(ctime_r(&ltime, buf), "\n"), id, src, dest);
+                    if(write(socketIdDaemon, "NO PATH\n", 9) == -1){
+                        printf("Error write %s\n", strerror(errno));
+                        return NULL;//raise
+                    }
+                }
+                else{
+                    //print path
+                    time(&ltime);
+                    printf("%s : Thread #%d: path found in database: %s\n", strtok(ctime_r(&ltime, buf),"\n"), id, cret);
+                    if(write(socketIdDaemon, cret, strlen(cret)) == -1){
+                        printf("Error write %s\n", strerror(errno));
+                        return NULL;//raise
+                    }
+                    if(write(socketIdDaemon, "\n", 2) == -1){
+                        printf("Error write %s\n", strerror(errno));
+                        return NULL;//raise
+                    }
                 }
             }
             else{
                 time(&ltime);
-                printf("%s : Thread #%d: path calculated: %s\n",strtok(ctime_r(&ltime, buf), "\n"), id, cret);
-                printf("%s : Thread #%d: responding to client and adding path to database\n",strtok(ctime_r(&ltime, buf), "\n"), id);
-                //add path to database
-                insertFirst(shared.cache , src, dest, cret);
-                //send info to the client
-                if(write(socketIdDaemon, cret, strlen(cret)) == -1){
-                    printf("Error write %s\n", strerror(errno));
-                    return NULL;//raise
+                printf("%s : Thread #%d: no path in database, calculating %d->%d\n",strtok(ctime_r(&ltime, buf), "\n"), id, src, dest);
+                cret = bfsSearch(shared.graph, src, dest);
+                if(!strcmp("NO PATH", cret)){
+                    time(&ltime);
+                    printf("%s : Thread #%d: path not possible from node %d to %d\n", strtok(ctime_r(&ltime, buf), "\n"), id, src, dest);
+                    if(write(socketIdDaemon, "NO PATH\n", 9) == -1){
+                        printf("Error write %s\n", strerror(errno));
+                        return NULL;//raise
+                    }
                 }
-                if(write(socketIdDaemon, "\n", 2) == -1){
-                    printf("Error write %s\n", strerror(errno));
-                    return NULL;//raise
-                }                   
+                else{
+                    time(&ltime);
+                    printf("%s : Thread #%d: path calculated: %s\n",strtok(ctime_r(&ltime, buf), "\n"), id, cret);
+                    printf("%s : Thread #%d: responding to client and adding path to database\n",strtok(ctime_r(&ltime, buf), "\n"), id);
+                    //add path to database
+                    //send info to the client
+                    if(write(socketIdDaemon, cret, strlen(cret)) == -1){
+                        printf("Error write %s\n", strerror(errno));
+                        return NULL;//raise
+                    }
+                    if(write(socketIdDaemon, "\n", 2) == -1){
+                        printf("Error write %s\n", strerror(errno));
+                        return NULL;//raise
+                    }                   
 
+                }
+                //writer thread
+                if(shared.prio == 0)
+                    prioritize3();
+                else if(shared.prio == 1)
+                    prioritize1();
+                else if(shared.prio == 2);
+                //access database
+                insertFirst(shared.cache , src, dest, cret);
+                if(shared.prio == 0)
+                    prioritize4();
+                else if(shared.prio == 1)
+                    prioritize2();
+                else if(shared.prio == 2);
+                free(cret);
             }
-            free(cret);
+            MLOCK(&shared.loadFactorMutex);
+            --shared.busyTNum;
+            MUNLOCK(&shared.loadFactorMutex);
         }
-        MLOCK(&shared.loadFactorMutex);
-        --shared.busyTNum;
-        MUNLOCK(&shared.loadFactorMutex);
     }
     return NULL;
 }

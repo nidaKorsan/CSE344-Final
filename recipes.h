@@ -56,6 +56,7 @@ typedef struct{
     char *port;
     int threadNum;
     int maxThreadNum;
+    int prio;
 }mainArgsServer;
 
 typedef struct{
@@ -79,6 +80,13 @@ typedef struct{
     int currentThreadCount;
     graph_t *graph;
     linkedList_t *cache;
+    pthread_cond_t okToRead, okToWrite;
+    pthread_mutex_t m;
+    int prio;
+    int AR; //number of active readers
+    int AW; //number of active writers
+    int WR; //number of waiting reader
+    int WW; //number of waiting writer    
 }sharedAmong_t;
 
 sharedAmong_t shared;
@@ -98,3 +106,7 @@ void printServerInfo(mainArgsServer margs,graph_t graph, double totalTime);
 int clientConnect(mainArgsClient *margs);
 void* daemonThreadAct(void *arg);
 void* poolerThreadAct(void *arg);
+void* prioritize1();
+void* prioritize2();
+void* prioritize3();
+void* prioritize4();

@@ -14,6 +14,7 @@
 #define CLOSEF(f) {if (close(f) == -1) {printf("Error while closing the file.\n");}}
 
 int main(int argc, char *argv[]){
+    callSigAction();
     //TODO uncomment this beauty
     /*myfd = open("/tmp/MyUniqueName", O_CREAT|O_EXCL);
     if ( myfd < 0 )
@@ -53,11 +54,20 @@ int main(int argc, char *argv[]){
     shared.thread_id = malloc(sizeof(pthread_t) * (margs.threadNum + 1));//+1 because there's also a pooler thread
     shared.graph = graph;
     shared.cache = cache;
+    shared.AR = 0; //number of active readers
+    shared.AW = 0; //number of active writers
+    shared.WR = 0; //number of waiting reader
+    shared.WW = 0; //number of waiting writer
+    shared.prio = margs.prio;  
     pthread_mutex_init(&shared.assignWorkMutex,NULL);
     pthread_mutex_init(&shared.loadFactorMutex,NULL);
+    pthread_mutex_init(&shared.m,NULL);
     pthread_cond_init(&shared.assignWorkCond, NULL);
     pthread_cond_init(&shared.noWorkCond, NULL);
     pthread_cond_init(&shared.loadFactorCond, NULL);
+    pthread_cond_init(&shared.okToRead, NULL);
+    pthread_cond_init(&shared.okToWrite, NULL);
+
 
     if((ret = pthread_create(&shared.thread_id[shared.idIndex++], NULL, poolerThreadAct, &margs)) != 0){
         printf("Error pthread_create %s\n", strerror(ret));
