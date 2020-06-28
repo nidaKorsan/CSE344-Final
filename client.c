@@ -19,11 +19,9 @@ int main(int argc, char *argv[]){
     if((cfd = clientConnect(&margs)) == -1){
     printf("Im in client print\n");
         return -1;
-    }   
-    clock_t start_t, end_t;
-    start_t = clock();
-    printf("sart is %ld\n",start_t);
-    double tot;
+    }
+    struct timespec start, finish;
+    clock_gettime(CLOCK_REALTIME, &start);
     time(&ltime);
     printf("%s : Client (%d) connected and requesting a path from node %d to %d\n",strtok(ctime_r(&ltime, buf), "\n"), pid, margs.src, margs.dest);
     // Send source and destination, with terminating newline
@@ -49,20 +47,20 @@ int main(int argc, char *argv[]){
         }
         if(bufi >= max)
             buffer = realloc(buffer, (max *= 2) * sizeof(char));
-        if(*lil != '!')
-            strcat(buffer, lil); 
         ++bufi;
-    }while(*lil != '!');
-    close(cfd); 
+        if(*lil != '\n')
+            strcat(buffer, lil);
+        //printf("lil %d\n", *lil);
+    }while(*lil != '\n');
+    clock_gettime(CLOCK_REALTIME, &finish); 
     time(&ltime);
-    end_t = clock();
-    printf("end)t is %ld\n",end_t);
-    tot = (double)(end_t - start_t) / CLOCKS_PER_SEC;
-    if(!strcmp("NO PATH", buffer)){
-        printf("%s : Server’s response (%d): NO PATH, arrived in %.4fseconds, shutting down\n", strtok(ctime_r(&ltime, buf), "\n"),pid, tot);
+    long seconds = finish.tv_sec - start.tv_sec;
+    long ns = finish.tv_nsec - start.tv_nsec;
+    if(!strcmp("NO PATH\n", buffer)){
+        printf("%s : Server’s response (%d): NO PATH, arrived in %.3fseconds, shutting down\n", strtok(ctime_r(&ltime, buf), "\n"),pid, (double)seconds + (double)ns/(double)1000000000);
     }
     else{
-        printf("%s : Server’s response to (%d): %s, arrived in %.4fseconds.\n", strtok(ctime_r(&ltime, buf), "\n"),pid, buffer, tot);
+        printf("%s : Server’s response to (%d): %s, arrived in %.3fseconds.\n", strtok(ctime_r(&ltime, buf), "\n"),pid, buffer, (double)seconds + (double)ns/(double)1000000000);
     }
     exit(EXIT_SUCCESS);    
     return 0;

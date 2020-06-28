@@ -1,4 +1,10 @@
-#include "myGraph.h"
+/**********************************************
+; *  344 Sytem Programming FINAL              *
+; *  Spring 2020                              *
+; *  Author: Nida Korsan                      *
+; *********************************************/
+
+#include "dataStructures.h"
 
 //new node with vertex v
 node_t* createNode(int v){
@@ -116,8 +122,9 @@ void freeQueue(queue_t *queue){
 
 char* bfsSearch(graph_t *graph, int source, int destination){
 	char *ret = calloc(100,sizeof(char));
+	char tempBuf[20] = "";
 	if(source == destination){
-		strcpy(ret,"Destination = Source\n");
+        sprintf(ret, "%d->%d",source, destination);
 		return ret;//both nodes are the same a->a
 	}
 	int pred[graph->numVertice], dist[graph->numVertice];
@@ -157,7 +164,6 @@ char* bfsSearch(graph_t *graph, int source, int destination){
 		return ret;
 	}
 	else{
-		char tempBuf[15] = "";
 		queue->front = tempFront;
 		int path[dist[destination] + 1], pathIn = 0;
 		ret = realloc(ret, (dist[destination] + 1) * 10 * sizeof(char));
@@ -181,26 +187,32 @@ char* bfsSearch(graph_t *graph, int source, int destination){
 
 void printList(linkedList_t *list) {
    lnode_t*ptr = list->head;
-   printf("\n[ ");
+   printf("\nList is [ ");
 	
    //start from the beginning
    while(ptr != NULL) {
       printf("(%d %d,%s) ",ptr->keysrc, ptr->keydest, ptr->data);
       ptr = ptr->next;
    }
-   printf(" ]");
+   printf(" ]\n");
 }
 
 void insertFirst(linkedList_t *list, int keysrc, int keydest, char* data) {
-    //create a link
-    lnode_t *link = (lnode_t*) malloc(sizeof(lnode_t));
-    link->keysrc = keysrc;
-    link->keydest = keydest;
-    link->data = data;
-    //point it to old first node
-    link->next = list->head;
-    //point first to new first node
-    list->head = link;
+    char *temp = find(list, keysrc, keydest);
+    printf("char data in insert %s\n", data);
+    if(temp == NULL){//if it's not already in list
+        printf("Its not in the list %d->%d\n", keysrc, keydest);
+        //create a link
+        lnode_t *link = (lnode_t*) malloc(sizeof(lnode_t));
+        link->keysrc = keysrc;
+        link->keydest = keydest;
+        link->data = malloc(sizeof(char) * strlen(data));
+        strcpy(link->data, data);
+        //point it to old first node
+        link->next = list->head;
+        //point first to new first node
+        list->head = link;
+    }
 }
 
 int isEmptyList(linkedList_t *list) {
@@ -208,7 +220,7 @@ int isEmptyList(linkedList_t *list) {
 }
 
 //find a link with given key
-lnode_t* find(linkedList_t *list, int keysrc, int keydest){
+char* find(linkedList_t *list, int keysrc, int keydest){
     //start from the first link
     lnode_t* current = list->head;
     //if list is empty
@@ -216,7 +228,8 @@ lnode_t* find(linkedList_t *list, int keysrc, int keydest){
         return NULL;
     }
     //navigate through list
-    while(current->keysrc != keysrc && current->keydest != keydest){
+        printf("current key %d %d, given key %d %d\n", current->keysrc, current->keydest, keysrc, keydest);
+    while(current->keysrc != keysrc || current->keydest != keydest){
         //if it is last node
         if(current->next == NULL){
             return NULL;
@@ -225,9 +238,9 @@ lnode_t* find(linkedList_t *list, int keysrc, int keydest){
             //go to next link
             current = current->next;
         }
-    }      
+    }
     //if data found, return the current Link
-    return current;
+    return current->data;
 }
 
 void destroyList(linkedList_t *list){

@@ -9,7 +9,7 @@
 //Client creation
 //Port connection etc.
 //Design general system structure
-
+//cache addition and usages
 #include "recipes.h"
 #define CLOSEF(f) {if (close(f) == -1) {printf("Error while closing the file.\n");}}
 
@@ -38,6 +38,7 @@ int main(int argc, char *argv[]){
         return -1;
     }
     graph_t *graph = createGraph(++temp);
+    linkedList_t *cache = initList();
     if(readFromFile(margs.fin, 1, graph, &temp, &totalTime)){
         return -1;
     }
@@ -51,6 +52,7 @@ int main(int argc, char *argv[]){
     shared.socketId = -1;
     shared.thread_id = malloc(sizeof(pthread_t) * (margs.threadNum + 1));//+1 because there's also a pooler thread
     shared.graph = graph;
+    shared.cache = cache;
     pthread_mutex_init(&shared.assignWorkMutex,NULL);
     pthread_mutex_init(&shared.loadFactorMutex,NULL);
     pthread_cond_init(&shared.assignWorkCond, NULL);

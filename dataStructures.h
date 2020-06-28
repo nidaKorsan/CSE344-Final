@@ -1,3 +1,9 @@
+/**********************************************
+; *  344 Sytem Programming FINAL              *
+; *  Spring 2020                              *
+; *  Author: Nida Korsan                      *
+; *********************************************/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -62,5 +68,5 @@ linkedList_t* initList();
 void printList(linkedList_t *list);
 void insertFirst(linkedList_t *list, int keysrc, int keydest, char* data);
 int isEmptyList(linkedList_t *list);
-lnode_t* find(linkedList_t *list, int keysrc, int keydest);
+char* find(linkedList_t *list, int keysrc, int keydest);
 void destroyList(linkedList_t *list);

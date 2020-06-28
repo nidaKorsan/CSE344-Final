@@ -396,17 +396,30 @@ void* daemonThreadAct(void *arg){
         time(&ltime);
         printf("%s : Thread #%d: searching database for a path from node %d to node %d\n",strtok(ctime_r(&ltime, buf), "\n"), id, src, dest);
         //database search
+        printList(shared.cache);
+        cret = find(shared.cache, src, dest);
         //if database search is successful
+        if(cret != NULL){
             //print path
-        //else
-        {
+            time(&ltime);
+            printf("%s : Thread #%d: path found in database: %s\n", strtok(ctime_r(&ltime, buf),"\n"), id, cret);
+            if(write(socketIdDaemon, cret, strlen(cret)) == -1){
+                printf("Error write %s\n", strerror(errno));
+                return NULL;//raise
+            }
+            if(write(socketIdDaemon, "\n", 2) == -1){
+                printf("Error write %s\n", strerror(errno));
+                return NULL;//raise
+            } 
+        }
+        else{
             time(&ltime);
             printf("%s : Thread #%d: no path in database, calculating %d->%d\n",strtok(ctime_r(&ltime, buf), "\n"), id, src, dest);
             cret = bfsSearch(shared.graph, src, dest);
             if(!strcmp("NO PATH", cret)){
                 time(&ltime);
                 printf("%s : Thread #%d: path not possible from node %d to %d\n", strtok(ctime_r(&ltime, buf), "\n"), id, src, dest);
-                if(write(socketIdDaemon, "NO PATH", 8) == -1){
+                if(write(socketIdDaemon, "NO PATH\n", 9) == -1){
                     printf("Error write %s\n", strerror(errno));
                     return NULL;//raise
                 }
@@ -416,15 +429,19 @@ void* daemonThreadAct(void *arg){
                 printf("%s : Thread #%d: path calculated: %s\n",strtok(ctime_r(&ltime, buf), "\n"), id, cret);
                 printf("%s : Thread #%d: responding to client and adding path to database\n",strtok(ctime_r(&ltime, buf), "\n"), id);
                 //add path to database
+                insertFirst(shared.cache , src, dest, cret);
+                //send info to the client
                 if(write(socketIdDaemon, cret, strlen(cret)) == -1){
                     printf("Error write %s\n", strerror(errno));
                     return NULL;//raise
                 }
-                if(write(socketIdDaemon, "!", 2) == -1){
+                if(write(socketIdDaemon, "\n", 2) == -1){
                     printf("Error write %s\n", strerror(errno));
                     return NULL;//raise
-                }
+                }                   
+
             }
+            free(cret);
         }
         MLOCK(&shared.loadFactorMutex);
         --shared.busyTNum;

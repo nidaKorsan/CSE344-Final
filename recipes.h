@@ -25,7 +25,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
-#include "myGraph.h"
+#include "dataStructures.h"
 
 #define UNLOCK(f) { lock.l_type = F_UNLCK;\
             if (fcntl(f, F_SETLKW, &lock) == -1){\
@@ -78,6 +78,7 @@ typedef struct{
     int busyTNum;
     int currentThreadCount;
     graph_t *graph;
+    linkedList_t *cache;
 }sharedAmong_t;
 
 sharedAmong_t shared;
